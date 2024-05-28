@@ -1,0 +1,38 @@
+import requests
+from bs4 import BeautifulSoup
+import csv
+
+def scrape_properties(location):
+    url = f"https://www.realestate.com.au/rent/in-{location}/list-1"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.content, "html.parser")
+    properties = []
+
+    for property_card in soup.find_all("div", class_="listingInfo"):
+        property_details = {}
+        property_details["Price"] = property_card.find("p", class_="listingPrice").text.strip()
+        property_details["Address"] = property_card.find("span", class_="address").text.strip()
+        property_details["Bedrooms"] = property_card.find("span", class_="generalFeatures bedroom").text.strip()
+        property_details["Bathrooms"] = property_card.find("span", class_="generalFeatures bathroom").text.strip()
+        property_details["Agent"] = property_card.find("span", class_="agent").text.strip()
+        properties.append(property_details)
+
+    return properties
+
+def save_to_csv(data, filename):
+    with open(filename, "w", newline="", encoding="utf-8") as csvfile:
+        fieldnames = ["Price", "Address", "Bedrooms", "Bathrooms", "Agent"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(data)
+
+def main():
+    location = "Epping"  # Change this to your desired location
+    properties = scrape_properties(location)
+    save_to_csv(properties, f"{location}_properties.csv")
+
+if __name__ == "__main__":
+    main()
